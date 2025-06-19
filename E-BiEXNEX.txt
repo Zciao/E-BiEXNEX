@@ -1,0 +1,87 @@
+model{
+  for (k in 1:n_mod) {
+    # data dimension [n_max + 1, 2, n_mod] with y[n_max + 1, , ] to be toxicity obs
+    # and y[1:n_max, , ] to be efficacy obs
+    
+    # Tox obs - logit link
+    y[n_max + 1, 1, k] ~ dbin(p[1, k], n[k]) # control group
+    logit(p[1, k]) <- alphaT[k]
+    y[n_max + 1, 2, k] ~ dbin(p[2, k], n[k]) # treatment group
+    logit(p[2, k]) <- alphaT[k] + theta[1, k] 
+    
+    # Eff obs - identity link
+    for (i in 1:n[k]) {
+      # for each individual
+      y[i, 1, k] ~ dnorm(muE[1, k], prec_eff[1, k]) # control group
+      y[i, 2, k] ~ dnorm(muE[2, k], prec_eff[2, k]) # treatment group
+    }
+    muE[1, k] <- alphaE[k]
+    muE[2, k] <- alphaE[k] + theta[2, k]
+    
+    # prior weights of the 4 components
+    cat[k] ~ dcat(pw)
+    
+    # construct the link for theta_k^t and theta_k^e
+    # T: toxicity; E: efficacy
+    # 1: EX; 0:NEX
+    theta[1, k] <- thetaT[cat[k], k]
+    theta[2, k] <- thetaE[cat[k], k]
+
+    # (T, E) = (1, 1)
+    thetaT[1, k] <- vec1[1, k]
+    thetaE[1, k] <- vec1[2, k]
+    vec1[1:2, k] ~ dmnorm(mu[1:2], prec_ex[1:2, 1:2])
+    
+    # (T, E) = (1, 0)
+    thetaT[2, k] ~ dnorm(mu[1], pow(sigma[1], -2))
+    thetaE[2, k] ~ dnorm(m0[2], pow(s0[2], -2))
+    
+    # (T, E) = (0, 1)
+    thetaT[3, k] ~ dnorm(m0[1], pow(s0[1], -2))
+    thetaE[3, k] ~ dnorm(mu[2], pow(sigma[2], -2))
+    
+    # (T, E) = (0, 0)
+    thetaT[4, k] <- vec2[1, k]
+    thetaE[4, k] <- vec2[2, k]
+    vec2[1:2, k] ~ dmnorm(m0[1:2], prec_nex[1:2, 1:2])
+    
+    # priors for baseline effects
+    alphaT[k] ~ dnorm(paT[1], pow(paT[2], -2))
+    alphaE[k] ~ dnorm(paE[1], pow(paE[2], -2))
+    
+    # priors for var of eff outcomes
+    var_eff[1, k] ~ dnorm(0, pow(std_var_eff[1], -2))I(0, )
+    prec_eff[1, k] <- pow(var_eff[1, k], -1) # ctrl
+    
+    var_eff[2, k] ~ dnorm(0, pow(std_var_eff[2], -2))I(0, )
+    prec_eff[2, k] <- pow(var_eff[2, k], -1) # trt
+  }
+
+  # covariance matrix
+  # component 1
+  prec_ex <- inverse(cov_ex)
+  cov_ex[1, 1] <- pow(sigma[1], 2)
+  cov_ex[1, 2] <- rho1 * sigma[1] * sigma[2]
+  cov_ex[2, 1] <- rho1 * sigma[1] * sigma[2]
+  cov_ex[2, 2] <- pow(sigma[2], 2)
+  
+  # component 4
+  prec_nex <- inverse(cov_nex) 
+  cov_nex[1, 1] <- pow(s0[1], 2)
+  cov_nex[1, 2] <- rho2 * s0[1] * s0[2]
+  cov_nex[2, 1] <- rho2 * s0[1] * s0[2]
+  cov_nex[2, 2] <- pow(s0[2], 2)
+  
+  # other priors
+  for (l in 1:2) {
+    prec_mu[l] <- pow(s[l], -2)
+    mu[l] ~ dnorm(m[l], prec_mu[l])
+    
+    prec_var[l] <- pow(z[l], -2)
+    varsg[l] ~ dnorm(0, prec_var[l])I(0, )
+    sigma[l] <- sqrt(varsg[l])
+  }
+  
+  rho1 ~ dunif(-1, 1)
+  rho2 ~ dunif(-1, 1)
+}

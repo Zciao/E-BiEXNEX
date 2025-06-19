@@ -1,0 +1,75 @@
+model{
+  for (k in 1:n_mod) {
+    # input data [n_max + 1, 2, n_mod] with y[n_max + 1, , ] to be toxicity obs
+    
+    # Tox obs
+    y[n_max + 1, 1, k] ~ dbin(p[1, k], n[k]) # for ctrl groups
+    logit(p[1, k]) <- alphaT[k]
+    y[n_max + 1, 2, k] ~ dbin(p[2, k], n[k]) # for trt groups
+    logit(p[2, k]) <- alphaT[k] + theta[1, k] # theta[1, ]: CRD for Tox data
+    
+    # Eff obs
+    for (i in 1:n[k]) {
+      # for each individual
+      y[i, 1, k] ~ dnorm(muE[1, k], prec_eff[1, k]) # ctrl groups
+      y[i, 2, k] ~ dnorm(muE[2, k], prec_eff[2, k]) # trt groups
+    }
+    muE[1, k] <- alphaE[k]
+    muE[2, k] <- alphaE[k] + theta[2, k] # theta[2, ]: CRD for Eff data
+    
+    # categorise to be EX or NEX, same w for each k
+    # exchangeability
+    cat[k] ~ dcat(pw)
+    theta[1, k] <- thetaT[cat[k], k]
+    theta[2, k] <- thetaE[cat[k], k]
+    
+    # EX - biNorm
+    thetaT[1, k] <- ex[1, k]
+    thetaE[1, k] <- ex[2, k]
+    ex[1:2, k] ~ dmnorm(mu[1:2], prec_ex[1:2, 1:2])
+    
+    # NEX - biNorm
+    thetaT[2, k] <- nex[1, k]
+    thetaE[2, k] <- nex[2, k]
+    nex[1:2, k] ~ dmnorm(m0[1:2], prec_nex[1:2, 1:2])
+    
+    # priors for baseline effects
+    alphaT[k] ~ dnorm(paT[1], pow(paT[2], -2))
+    alphaE[k] ~ dnorm(paE[1], pow(paE[2], -2))
+    
+    # priors for var of eff outcomes
+    var_eff[1, k] ~ dnorm(0, pow(std_var_eff[1], -2))I(0, )
+    prec_eff[1, k] <- pow(var_eff[1, k], -1) # ctrl
+    
+    var_eff[2, k] ~ dnorm(0, pow(std_var_eff[2], -2))I(0, )
+    prec_eff[2, k] <- pow(var_eff[2, k], -1) # trt
+  }
+
+  # precision matrix to cov
+  # EX
+  prec_ex <- inverse(cov_ex)
+  cov_ex[1, 1] <- pow(sigma[1], 2)
+  cov_ex[1, 2] <- rho1 * sigma[1] * sigma[2]
+  cov_ex[2, 1] <- rho1 * sigma[1] * sigma[2]
+  cov_ex[2, 2] <- pow(sigma[2], 2)
+  
+  # NEX
+  prec_nex <- inverse(cov_nex) 
+  cov_nex[1, 1] <- pow(s0[1], 2)
+  cov_nex[1, 2] <- rho2 * s0[1] * s0[2]
+  cov_nex[2, 1] <- rho2 * s0[1] * s0[2]
+  cov_nex[2, 2] <- pow(s0[2], 2)
+  
+  # priors for 
+  for (l in 1:2) {
+    prec_mu[l] <- pow(s[l], -2)
+    mu[l] ~ dnorm(m[l], prec_mu[l])
+    
+    prec_var[l] <- pow(z[l], -2)
+    varsg[l] ~ dnorm(0, prec_var[l])I(0, )
+    sigma[l] <- sqrt(varsg[l])
+  }
+  
+  rho1 ~ dunif(-1, 1)
+  rho2 ~ dunif(-1, 1)
+}
