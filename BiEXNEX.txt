@@ -1,12 +1,13 @@
 model{
   for (k in 1:n_mod) {
     # input data [n_max + 1, 2, n_mod] with y[n_max + 1, , ] to be toxicity obs
+    # and y[1:n_max, , ] to be efficacy obs
     
     # Tox obs
     y[n_max + 1, 1, k] ~ dbin(p[1, k], n[k]) # for ctrl groups
     logit(p[1, k]) <- alphaT[k]
     y[n_max + 1, 2, k] ~ dbin(p[2, k], n[k]) # for trt groups
-    logit(p[2, k]) <- alphaT[k] + theta[1, k] # theta[1, ]: CRD for Tox data
+    logit(p[2, k]) <- alphaT[k] + theta[1, k] # toxicity treatment effect
     
     # Eff obs
     for (i in 1:n[k]) {
@@ -15,7 +16,7 @@ model{
       y[i, 2, k] ~ dnorm(muE[2, k], prec_eff[2, k]) # trt groups
     }
     muE[1, k] <- alphaE[k]
-    muE[2, k] <- alphaE[k] + theta[2, k] # theta[2, ]: CRD for Eff data
+    muE[2, k] <- alphaE[k] + theta[2, k] # efficacy treatment effect
     
     # categorise to be EX or NEX, same w for each k
     # exchangeability
@@ -60,7 +61,7 @@ model{
   cov_nex[2, 1] <- rho2 * s0[1] * s0[2]
   cov_nex[2, 2] <- pow(s0[2], 2)
   
-  # priors for 
+  # priors
   for (l in 1:2) {
     prec_mu[l] <- pow(s[l], -2)
     mu[l] ~ dnorm(m[l], prec_mu[l])
