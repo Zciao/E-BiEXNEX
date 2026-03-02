@@ -102,7 +102,7 @@ sim_BiEXNEX <- function(ntrial, trial_size, muct, muce, st_all, se_all, Th, fcov
                         # fitting
                         sim_fit_joint <- jags(data = sim_dat,
                                               parameters.to.save = c("theta", "cat"),
-                                              model.file = "~/PhaseII_basket_EXNEX/model/EXNEX_COMB.txt",
+                                              model.file = "./BiEXNEX.txt",
                                               n.chains = 4,
                                               n.iter = 1e4,
                                               n.burnin = 2e3,
