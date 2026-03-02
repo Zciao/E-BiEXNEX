@@ -93,9 +93,4 @@ gen_data <- function(ntrial, trial_size, muct, muce, st_all, se_all, Th, fcov) {
   
   return(fr)
 }
-  
-  r1 <- rho * std[2] ** 2 * (t - mu[1]) * dnorm(t, mu[1], std[1]) * (pr1 - pr1 ** 2) / std[1]
-  r2 <- rho * std[2] ** 2 * dnorm(t, mu[1], std[1]) * (1 - 2 * pr1) * (intT - mu[1] * pr1) / (2 * std[1])
-  
-  (r1 - r2) / deno
-}
+
