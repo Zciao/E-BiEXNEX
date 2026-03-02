@@ -1,0 +1,50 @@
+model{
+
+  for (k in 1:n_mod) {
+    
+    for (i in 1:n[k]) {
+      # efficacy outcomes
+      y[i, 1, k] ~ dnorm(muE[1, k], prec[1, k]) # ctrl groups
+      y[i, 2, k] ~ dnorm(muE[2, k], prec[2, k]) # trt groups
+    }
+    
+    # link function
+    muE[1, k] <- alpha[k]
+    muE[2, k] <- alpha[k] + theta[k] # CRD
+    
+    # cat_k: ex or nex category for k
+    theta[k] <- all_theta[catE[k], k]
+    
+    # EX
+    all_theta[1, k] ~ dnorm(mu_ex, prec_ex)
+    
+    # NEX
+    # here we assume i.i.d distr
+    all_theta[2, k] ~ dnorm(mu_nex, prec_nex)
+    
+    # if subgroup k is exchangeable
+    catE[k] ~ dcat(pw)
+    
+    # priors for alpha, assume all alpha[k] follow the same distr
+    alpha[k] ~ dnorm(pa, prec_alpha)
+                
+    # priors for var of eff outcomes
+    var_eff[1, k] ~ dnorm(0, pow(std_var_eff[1], -2))I(0, )
+    prec[1, k] <- pow(var_eff[1, k], -1) # ctrl
+    
+    var_eff[2, k] ~ dnorm(0, pow(std_var_eff[2], -2))I(0, )
+    prec[2, k] <- pow(var_eff[2, k], -1) # trt
+  }
+  # priors for ex
+  mu_ex ~ dnorm(mu_ex_prior[1], mu_ex_prec)
+  mu_ex_prec <- pow(mu_ex_prior[2], -2)
+  
+  var_ex ~ dnorm(0, prec_var_ex)I(0, )
+  prec_var_ex <- pow(std_var_ex, -2)
+  prec_ex <- pow(var_ex, -1)
+  
+  # prec to std for nex
+  prec_nex <- pow(std_nex, -2)
+  
+  prec_alpha <- pow(std_alpha, -2)
+}

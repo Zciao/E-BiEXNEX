@@ -1,0 +1,38 @@
+model{
+  # outcomes
+  for (k in 1:n_mod) {
+    y[1, k] ~ dbin(p[1, k], n[k]) # 1 for ctrl group
+    y[2, k] ~ dbin(p[2, k], n[k]) # 2 for trt group
+    # logit link
+    logit(p[1, k]) <- alpha[k]
+    logit(p[2, k]) <- alpha[k] + theta[k] # CRD
+    # define theta_k
+    # cat_k: ex or nex category for k
+    theta[k] <- all_theta[catT[k], k]
+    
+    # all_theta[1, ]: exchangeable
+    all_theta[1, k] ~ dnorm(mu_ex, prec_ex)
+    
+    # all_theta[2, ]: non-exchangeable
+    # here we assume i.i.d distr
+    all_theta[2, k] ~ dnorm(mu_nex, prec_nex)
+    
+    # if subgroup k is exchangeable
+    catT[k] ~ dcat(pw)
+    
+    # priors for alpha, assume all alpha[k] follow the same distr
+    alpha[k] ~ dnorm(pa, prec_alpha)
+  }
+  # priors for ex
+  mu_ex ~ dnorm(mu_ex_prior[1], mu_ex_prec)
+  mu_ex_prec <- pow(mu_ex_prior[2], -2)
+  
+  var_ex ~ dnorm(0, prec_var_ex)I(0, )
+  prec_var_ex <- pow(std_var_ex, -2)
+  prec_ex <- pow(var_ex, -1)
+  
+  # prec to std for nex
+  prec_nex <- pow(std_nex, -2)
+  
+  prec_alpha <- pow(std_alpha, -2)
+}
