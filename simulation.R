@@ -173,14 +173,14 @@ sim_IndEXNEX <- function(ntrial, trial_size, muct, muce, st_all, se_all, Th, fco
                         # fitting
                         sim_fit_tox <- jags(data = sim_tox,
                                             parameters.to.save = c("theta", "catT"),
-                                            model.file = "~/PhaseII_basket_EXNEX/model/EXNEX_binom.txt",
+                                            model.file = "./EXNEX_tox_only.txt",
                                             n.chains = 4,
                                             n.iter = 1e4,
                                             n.burnin = 2e3,
                                             n.thin = 2)
                         sim_fit_eff <- jags(data = sim_eff,
                                             parameters.to.save = c("theta", "catE"),
-                                            model.file = "~/PhaseII_basket_EXNEX/model/EXNEX_norm.txt",
+                                            model.file = "./EXNEX_eff_only.txt",
                                             n.chains = 4,
                                             n.iter = 1e4,
                                             n.burnin = 2e3,
